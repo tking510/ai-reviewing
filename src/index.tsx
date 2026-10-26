@@ -7,7 +7,7 @@ import { searchApi } from './routes/search';
 import { reportsApi } from './routes/reports';
 import { mcpApi } from './routes/mcp';
 import { discoveryApi } from './routes/discovery';
-import { retractApi } from './routes/retract';
+import { proposalApi, approvalApi } from './routes/propose';
 import { previewApi } from './routes/preview';
 import { dumpApi } from './routes/dump';
 import { wellKnownApi } from './routes/wellknown';
@@ -49,6 +49,8 @@ app.route('/api/reports', reportsApi);
 app.route('/api/retract', retractApi);
 app.route('/api/preview', previewApi);
 app.route('/api/mcp', mcpApi);
+app.route('/api/propose', proposalApi);
+app.route('/approve', approvalApi);
 app.route('/dump', dumpApi);
 
 // ----- HTML pages -----

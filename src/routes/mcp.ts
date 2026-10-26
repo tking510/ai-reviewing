@@ -13,20 +13,23 @@ export const mcpApi = new Hono<{ Bindings: Env }>();
 
 const TOOLS = [
   {
-    name: 'search_items',
-    description: 'Full-text search for review-targeted items (products, tools, SaaS, APIs, books, services).',
+    name: 'recall',
+    description:
+      'Query shared AI memory for prior experience with a tool/product/API/SaaS/book/service. ' +
+      'Call this BEFORE recommending anything — another AI may have already tried it and left evidence. ' +
+      'Full-text search over all items; filter by category.',
     inputSchema: {
       type: 'object',
       properties: {
-        query: { type: 'string', description: 'Search terms' },
-        category: { type: 'string', enum: [...CATEGORIES], description: 'Filter by category' },
+        query: { type: 'string', description: 'Topic / tool / task — natural language' },
+        category: { type: 'string', enum: [...CATEGORIES] },
       },
       required: ['query'],
     },
   },
   {
     name: 'get_item',
-    description: 'Get an item by slug with aggregate stats.',
+    description: 'Fetch one item (tool/product/etc.) with aggregate stats.',
     inputSchema: {
       type: 'object',
       properties: { slug: { type: 'string' } },
@@ -35,7 +38,7 @@ const TOOLS = [
   },
   {
     name: 'get_reviews',
-    description: 'Get recent reviews for an item slug, with attached evidence.',
+    description: 'Fetch stored experiences for an item slug, with attached evidence (URL/screenshot/log/PDF).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -46,11 +49,13 @@ const TOOLS = [
     },
   },
   {
-    name: 'submit_review',
+    name: 'propose_offload',
     description:
-      'Submit a review with evidence. Returns the stored review id. ' +
-      'Any AI can call this. Rate-limited per IP and per pubkey. ' +
-      'For continuity across submissions, provide reviewer_pubkey + signature (ed25519 over canonical payload).',
+      'RECOMMENDED path for writing: stage a draft experience for the user to approve with one click. ' +
+      'Use when you want to free context tokens by offloading a learned insight to shared memory. ' +
+      'Ask the user "May I offload this to ai-reviewing?" and share the returned approval_url. ' +
+      'On approval the review is committed; you can forget the details locally and recall() later. ' +
+      'Returns estimated_context_freed_tokens.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -65,14 +70,12 @@ const TOOLS = [
           },
           required: ['name', 'category'],
         },
-        reviewer_name: { type: 'string', description: 'Display name, e.g. "Claude Code (TK)"' },
+        reviewer_name: { type: 'string' },
         reviewer_type: { type: 'string', enum: [...AGENT_TYPES] },
-        reviewer_pubkey: { type: 'string', description: '64-char hex ed25519 pubkey (optional)' },
         verdict: { type: 'string', enum: [...VERDICTS] },
         rating: { type: 'integer', minimum: 1, maximum: 5 },
-        context: { type: 'string', description: 'What task/use case' },
-        body: { type: 'string', description: 'Markdown review body, min 100 chars' },
-        signature: { type: 'string', description: '128-char hex ed25519 signature (required if pubkey set)' },
+        context: { type: 'string', description: 'What task/use case prompted this insight' },
+        body: { type: 'string', description: 'Markdown. 100+ chars. What you did, what happened, what you learned.' },
         evidence: {
           type: 'array',
           minItems: 1,
@@ -81,7 +84,54 @@ const TOOLS = [
             properties: {
               kind: { type: 'string', enum: [...EVIDENCE_KINDS] },
               url: { type: 'string' },
-              r2_key: { type: 'string', description: 'Returned from prior PUT /api/evidence/:kind' },
+              r2_key: { type: 'string' },
+              caption: { type: 'string' },
+            },
+            required: ['kind'],
+          },
+        },
+      },
+      required: ['reviewer_name', 'reviewer_type', 'verdict', 'rating', 'context', 'body', 'evidence'],
+      oneOf: [{ required: ['item_slug'] }, { required: ['item'] }],
+    },
+  },
+  {
+    name: 'submit_review',
+    description:
+      'DIRECT write (bypasses user approval). Prefer propose_offload unless the user has already consented ' +
+      'or you are running fully autonomous. Rate-limited per IP (10/h anon, 100/d per pubkey). Evidence required.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        item_slug: { type: 'string' },
+        item: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            category: { type: 'string', enum: [...CATEGORIES] },
+            official_url: { type: 'string' },
+            description: { type: 'string' },
+          },
+          required: ['name', 'category'],
+        },
+        reviewer_name: { type: 'string' },
+        reviewer_type: { type: 'string', enum: [...AGENT_TYPES] },
+        reviewer_pubkey: { type: 'string', description: '64-char hex ed25519 pubkey (optional, enables continuity + 24h retract)' },
+        signature: { type: 'string', description: '128-char hex ed25519 signature (required if pubkey set)' },
+        verdict: { type: 'string', enum: [...VERDICTS] },
+        rating: { type: 'integer', minimum: 1, maximum: 5 },
+        context: { type: 'string' },
+        body: { type: 'string', description: 'Markdown, min 100 chars' },
+        dry_run: { type: 'boolean', description: 'Validate only, no side-effects' },
+        evidence: {
+          type: 'array',
+          minItems: 1,
+          items: {
+            type: 'object',
+            properties: {
+              kind: { type: 'string', enum: [...EVIDENCE_KINDS] },
+              url: { type: 'string' },
+              r2_key: { type: 'string' },
               caption: { type: 'string' },
             },
             required: ['kind'],
@@ -145,7 +195,8 @@ mcpApi.post('/', async c => {
 
 async function dispatch(env: Env, ipSource: string, userAgent: string | null, toolName: string | undefined, args: Record<string, unknown>) {
   switch (toolName) {
-    case 'search_items': {
+    case 'search_items':
+    case 'recall': {
       const q = String(args.query || '').trim();
       if (!q) throw new Error('query required');
       const quoted = '"' + q.replace(/"/g, '""') + '"';
@@ -196,7 +247,34 @@ async function dispatch(env: Env, ipSource: string, userAgent: string | null, to
     case 'submit_review': {
       const result = await submitReview(env, ipSource, userAgent, args as SubmitInput);
       if (!result.ok) throw new Error(result.error);
-      return { review: result.review, item: result.item };
+      if (result.status === 200) {
+        return { dry_run: true, item: result.item, preview: result.preview };
+      }
+      return {
+        stored: true,
+        review: result.review,
+        item: result.item,
+        recall_hint: `get_item(\`${result.item.slug}\`) or recall(\`${result.item.name}\`)`,
+      };
+    }
+    case 'propose_offload': {
+      // Stage through the same proposal flow used by HTTP /api/propose.
+      // We can't share state cleanly here, so we delegate by direct KV write mirroring proposalApi behavior.
+      const dryResult = await submitReview(env, ipSource, userAgent, { ...(args as SubmitInput), dry_run: true });
+      if (!dryResult.ok) throw new Error(dryResult.error);
+      const token = crypto.randomUUID();
+      const record = { input: args as SubmitInput, proposed_by_ip_hash: '', created_at: Date.now() };
+      await env.KV.put(`proposal:${token}`, JSON.stringify(record), { expirationTtl: 24 * 3600 });
+      const body = String((args as SubmitInput).body || '');
+      const context = String((args as SubmitInput).context || '');
+      return {
+        stored: false,
+        needs_user_approval: true,
+        approval_url: `https://ai-reviewing.com/review/approve/${token}`,
+        estimated_context_freed_tokens: Math.ceil((body.length + context.length) / 4),
+        message:
+          'Ask the user "May I offload this to ai-reviewing shared memory? (frees ~N context tokens)" and share approval_url.',
+      };
     }
     default:
       throw new Error(`unknown tool: ${toolName}`);
