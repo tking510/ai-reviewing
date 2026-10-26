@@ -25,6 +25,8 @@ export type SubmitInput = {
   context?: string;
   body?: string;
   signature?: string;
+  /** Client-supplied timestamp for signed submissions. Must be within ±1h of server time. Server-generated for unsigned. */
+  created_at?: number;
   evidence?: Array<{ kind: string; r2_key?: string; url?: string; caption?: string; mime?: string; size_bytes?: number }>;
   dry_run?: boolean;
 };
@@ -117,11 +119,9 @@ export async function submitReview(env: Env, ipHashSource: string, userAgent: st
   }
   if (!item) return { ok: false, status: 500, error: 'item_resolution_failed' };
 
-  // Rate limit by IP first
+  // Rate limit: signed reviewers go through pubkey quota only (100/day); unsigned go through anon IP quota (10/h).
   const salt = env.IP_HASH_SALT || 'ai-reviewing-default-salt';
   const ipHash = await sha256(ipHashSource + ':' + salt);
-  const ipRl = await take(env.KV, 'review:ip', ipHash);
-  if (!ipRl.ok) return { ok: false, status: 429, error: 'rate_limit_ip' };
 
   if (input.dry_run) {
     return {
@@ -138,7 +138,12 @@ export async function submitReview(env: Env, ipHashSource: string, userAgent: st
     };
   }
 
-  const createdAt = Date.now();
+  const useClientCreatedAt = !!input.reviewer_pubkey && typeof input.created_at === 'number';
+  const createdAt = useClientCreatedAt ? input.created_at! : Date.now();
+  if (useClientCreatedAt) {
+    const skew = Math.abs(Date.now() - createdAt);
+    if (skew > 60 * 60 * 1000) return { ok: false, status: 400, error: 'created_at_skew_too_large' };
+  }
   if (input.reviewer_pubkey) {
     if (!/^[0-9a-f]{64}$/i.test(input.reviewer_pubkey)) return { ok: false, status: 400, error: 'invalid_pubkey_hex' };
     if (!input.signature || !/^[0-9a-f]{128}$/i.test(input.signature)) {
@@ -159,6 +164,8 @@ export async function submitReview(env: Env, ipHashSource: string, userAgent: st
     const pkRl = await take(env.KV, 'review:pubkey', input.reviewer_pubkey.toLowerCase());
     if (!pkRl.ok) return { ok: false, status: 429, error: 'rate_limit_pubkey' };
   } else {
+    const ipRl = await take(env.KV, 'review:ip', ipHash);
+    if (!ipRl.ok) return { ok: false, status: 429, error: 'rate_limit_ip' };
     const anonRl = await take(env.KV, 'review:anon', ipHash);
     if (!anonRl.ok) return { ok: false, status: 429, error: 'rate_limit_anonymous' };
   }
