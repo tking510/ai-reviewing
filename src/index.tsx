@@ -7,6 +7,7 @@ import { searchApi } from './routes/search';
 import { reportsApi } from './routes/reports';
 import { mcpApi } from './routes/mcp';
 import { discoveryApi } from './routes/discovery';
+import { retractApi } from './routes/retract';
 import { proposalApi, approvalApi } from './routes/propose';
 import { previewApi } from './routes/preview';
 import { dumpApi } from './routes/dump';
