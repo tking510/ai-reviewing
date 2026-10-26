@@ -16,6 +16,7 @@ import { embedApi } from './routes/embed';
 import { leadersApi } from './routes/leaders';
 import { forAgentsApi } from './routes/foragents';
 import { seoApi } from './routes/seo';
+import { supportPages } from './routes/support';
 
 import type { ItemRow, ReviewRow, EvidenceRow } from './lib/db';
 import { itemFromRow } from './lib/db';
@@ -67,6 +68,7 @@ root.get('/favicon.ico', c => seoApi.fetch(new Request(new URL('/favicon.svg', c
 const app = new Hono<{ Bindings: Env }>({ strict: false }).basePath('/review');
 
 app.route('/', discoveryApi);
+app.route('/', supportPages);
 
 app.route('/api/items', itemsApi);
 app.route('/api/reviews', reviewsApi);
