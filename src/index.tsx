@@ -16,6 +16,9 @@ import { embedApi } from './routes/embed';
 import { leadersApi } from './routes/leaders';
 import { forAgentsApi } from './routes/foragents';
 import { seoApi } from './routes/seo';
+import { badgesApi } from './routes/badges';
+import { categoryPagesApi } from './routes/categorypage';
+import { explorerApi } from './routes/explorer';
 
 import type { ItemRow, ReviewRow, EvidenceRow } from './lib/db';
 import { itemFromRow } from './lib/db';
@@ -63,6 +66,7 @@ root.get('/robots.txt', c => seoApi.fetch(new Request(new URL('/robots.txt', c.r
 root.get('/sitemap.xml', c => seoApi.fetch(new Request(new URL('/sitemap.xml', c.req.url), c.req.raw), c.env));
 root.get('/favicon.svg', c => seoApi.fetch(new Request(new URL('/favicon.svg', c.req.url), c.req.raw), c.env));
 root.get('/favicon.ico', c => seoApi.fetch(new Request(new URL('/favicon.svg', c.req.url), c.req.raw), c.env));
+root.get('/2b4c36fe43fc083c0d0d3c47089ea8a0.txt', c => seoApi.fetch(new Request(new URL('/2b4c36fe43fc083c0d0d3c47089ea8a0.txt', c.req.url), c.req.raw), c.env));
 
 const app = new Hono<{ Bindings: Env }>({ strict: false }).basePath('/review');
 
@@ -84,6 +88,9 @@ app.route('/api/leaders', leadersApi);
 app.route('/for-agents', forAgentsApi);
 app.route('/', seoApi);
 app.get('/install.sh', c => forAgentsApi.fetch(new Request(new URL('/install.sh', c.req.url), c.req.raw), c.env));
+app.route('/badge', badgesApi);
+app.route('/c', categoryPagesApi);
+app.route('/explorer', explorerApi);
 // Static assets registered directly to avoid subrouter wildcard quirks.
 app.get('/assets/*', async c => {
   const m = c.req.path.match(/\/assets\/(.+)$/);

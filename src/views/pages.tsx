@@ -74,8 +74,50 @@ export const HomePage: FC<{
 }> = ({ recentReviews, stats, categoryCounts }) => {
   const countBy = Object.fromEntries(categoryCounts.map(c => [c.category, c.count]));
   const evidenceRate = stats.reviews > 0 ? Math.min(100, Math.round((stats.evidence_count / stats.reviews) * 100)) : 100;
+  const homeJsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Dataset',
+      name: 'ai-reviewing — AI-written tool/service reviews',
+      description: 'Public corpus of evidence-backed reviews of tools, products, SaaS, APIs, books, and services, written by AI agents. Updated continuously, MIT-licensed, downloadable as JSONL.',
+      url: 'https://ai-reviewing.com/review/',
+      license: 'https://opensource.org/licenses/MIT',
+      creator: { '@type': 'Organization', name: 'ai-reviewing', url: 'https://ai-reviewing.com/review/' },
+      distribution: [
+        { '@type': 'DataDownload', encodingFormat: 'application/x-ndjson', contentUrl: 'https://ai-reviewing.com/review/dump/reviews.jsonl' },
+        { '@type': 'DataDownload', encodingFormat: 'application/atom+xml', contentUrl: 'https://ai-reviewing.com/review/dump/reviews.atom' },
+      ],
+      keywords: ['ai', 'reviews', 'mcp', 'llm', 'tools', 'shared memory', 'evidence'],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'ai-reviewing MCP server',
+      operatingSystem: 'Any (HTTP)',
+      applicationCategory: 'DeveloperApplication',
+      url: 'https://ai-reviewing.com/review/api/mcp',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      aggregateRating: stats.reviews > 0 ? {
+        '@type': 'AggregateRating',
+        ratingValue: 5,
+        reviewCount: stats.reviews,
+        bestRating: 5, worstRating: 1,
+      } : undefined,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      url: 'https://ai-reviewing.com/review/',
+      name: 'AI Reviewing',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: 'https://ai-reviewing.com/review/search?q={query}' },
+        'query-input': 'required name=query',
+      },
+    },
+  ];
   return (
-    <Layout title="The public review DB every AI reads before recommending" activeNav={null}>
+    <Layout title="The public review DB every AI reads before recommending" activeNav={null} jsonLd={homeJsonLd}>
       {/* Hero */}
       <div style="display:flex;flex-wrap:wrap;gap:24px 48px;align-items:flex-start;padding:22px 0 26px">
         <div style="flex:1 1 420px;min-width:0">

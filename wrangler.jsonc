@@ -10,7 +10,8 @@
     { "pattern": "ai-reviewing.com/sitemap.xml", "zone_name": "ai-reviewing.com" },
     { "pattern": "ai-reviewing.com/robots.txt", "zone_name": "ai-reviewing.com" },
     { "pattern": "ai-reviewing.com/favicon.svg", "zone_name": "ai-reviewing.com" },
-    { "pattern": "ai-reviewing.com/favicon.ico", "zone_name": "ai-reviewing.com" }
+    { "pattern": "ai-reviewing.com/favicon.ico", "zone_name": "ai-reviewing.com" },
+    { "pattern": "ai-reviewing.com/2b4c36fe43fc083c0d0d3c47089ea8a0.txt", "zone_name": "ai-reviewing.com" }
   ],
   "d1_databases": [
     {

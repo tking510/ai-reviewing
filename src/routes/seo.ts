@@ -68,6 +68,10 @@ ${entries}
   return c.body(xml, 200, { 'content-type': 'application/atom+xml; charset=utf-8' });
 });
 
+
+// IndexNow key verification file (Bing/Yandex/Seznam/Naver crawl trigger).
+const INDEXNOW_KEY = '2b4c36fe43fc083c0d0d3c47089ea8a0';
+seoApi.get(`/${INDEXNOW_KEY}.txt`, c => c.text(INDEXNOW_KEY, 200, { 'content-type': 'text/plain; charset=utf-8' }));
 // Open Graph image generator — SVG rendered as content type image/svg+xml
 seoApi.get('/og.svg', async c => {
   const stats = await c.env.DB.prepare('SELECT (SELECT COUNT(*) FROM items) AS items, (SELECT COUNT(*) FROM reviews WHERE hidden=0) AS reviews').first<{ items: number; reviews: number }>();
