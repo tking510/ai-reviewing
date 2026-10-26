@@ -6,6 +6,7 @@ import { renderMarkdown } from './markdown';
 import { CATEGORIES, VERDICTS, AGENT_TYPES } from '../lib/util';
 import {
   CATEGORY_META,
+  DOMAIN_META,
   VERDICT_META,
   AGENT_COLOR,
   twoLetterCode,
@@ -141,19 +142,32 @@ export const HomePage: FC<{
         </div>
       </div>
 
-      {/* Category chips */}
-      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 0 22px;border-top:1px solid #e5e5e3">
-        {CATEGORIES.map(c => {
-          const m = CATEGORY_META[c];
+      {/* Category chips grouped by domain */}
+      <div style="padding:12px 0 22px;border-top:1px solid #e5e5e3">
+        {Object.entries(DOMAIN_META).map(([domainKey, dm]) => {
+          const cats = CATEGORIES.filter(c => CATEGORY_META[c].domain === domainKey);
+          if (cats.length === 0) return null;
           return (
-            <a
-              href={`/review/items?category=${c}`}
-              style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:999px;border:1px solid #d6d6d3;background:#fff;color:#111;font-size:13px"
-            >
-              <span class="mono" style="font-size:10px;font-weight:600;color:#111;background:#f0f0ee;padding:1px 5px;border-radius:4px;letter-spacing:.04em">{m.ab}</span>
-              {m.label}
-              <span style="color:#6b6b6b;font-size:12px">{countBy[c] || 0}</span>
-            </a>
+            <div style="margin-top:10px">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.04em;color:#8a8a86;margin-bottom:6px">
+                <span style="margin-right:4px">{dm.emoji}</span>{dm.label}
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                {cats.map(c => {
+                  const m = CATEGORY_META[c];
+                  return (
+                    <a
+                      href={`/review/items?category=${c}`}
+                      style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 7px;border-radius:999px;border:1px solid #d6d6d3;background:#fff;color:#111;font-size:12.5px"
+                    >
+                      <span style="font-size:12px">{m.emoji}</span>
+                      {m.label}
+                      <span style="color:#8a8a86;font-size:11.5px">{countBy[c] || 0}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -238,13 +252,24 @@ export const ItemsPage: FC<{
     <Layout title="アイテム一覧" activeNav="items" jsonLd={jsonLd}>
       <h1 style="font-size:24px;margin:0 0 14px;letter-spacing:-.02em">アイテム一覧</h1>
       <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
-        <aside style="flex:0 0 220px;position:sticky;top:70px">
+        <aside style="flex:0 0 240px;position:sticky;top:70px">
           <div style="background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:6px">
             <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:#6b6b6b;padding:8px 8px 4px;text-transform:uppercase">カテゴリ</div>
             <CategoryLink href="/review/items" ab="ALL" label="すべて" count={totalCount} active={!category} />
-            {CATEGORIES.map(c => {
-              const m = CATEGORY_META[c];
-              return <CategoryLink href={`/review/items?category=${c}`} ab={m.ab} label={m.label} count={countBy[c] || 0} active={category === c} />;
+            {Object.entries(DOMAIN_META).map(([domainKey, dm]) => {
+              const cats = CATEGORIES.filter(c => CATEGORY_META[c].domain === domainKey);
+              if (cats.length === 0) return null;
+              return (
+                <div style="margin-top:6px">
+                  <div style="font-size:10.5px;font-weight:600;letter-spacing:.04em;color:#8a8a86;padding:6px 8px 3px">
+                    <span style="margin-right:4px">{dm.emoji}</span>{dm.label}
+                  </div>
+                  {cats.map(c => {
+                    const m = CATEGORY_META[c];
+                    return <CategoryLink href={`/review/items?category=${c}`} ab={m.ab} label={m.label} count={countBy[c] || 0} active={category === c} />;
+                  })}
+                </div>
+              );
             })}
           </div>
         </aside>
@@ -359,6 +384,16 @@ export const ItemDetailPage: FC<{
             {item.description && <p style="font-size:13.5px;color:#3a3a3a;margin:6px 0 0;max-width:60ch">{item.description}</p>}
             {item.official_url && (
               <div style="margin-top:8px"><a href={item.official_url} target="_blank" rel="noopener nofollow" style="font-size:12.5px">公式サイト: {item.official_url.replace(/^https?:\/\//, '').slice(0, 48)} ↗</a></div>
+            )}
+            {(item.location || item.price_tier || item.subcategory || (item.use_case_tags && item.use_case_tags.length > 0)) && (
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+                {item.subcategory && <span style="font-size:11.5px;background:#f0f0ee;color:#111;padding:2px 7px;border-radius:4px">{item.subcategory}</span>}
+                {item.location && <span style="font-size:11.5px;background:#f0f0ee;color:#111;padding:2px 7px;border-radius:4px">📍 {item.location}</span>}
+                {item.price_tier && <span style="font-size:11.5px;background:#fff6d6;color:#78350f;padding:2px 7px;border-radius:4px;font-weight:600">{item.price_tier}</span>}
+                {(item.use_case_tags || []).slice(0, 8).map(t => (
+                  <span style="font-size:11.5px;background:#eef2ff;color:#3730a3;padding:2px 7px;border-radius:4px">#{t}</span>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -503,6 +538,21 @@ export const SubmitPage: FC<{ itemSlug?: string }> = ({ itemSlug }) => (
           </select>
         </label>
         <label style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6b6b6b">公式URL (任意)</span><input type="url" name="item_official_url" style="height:34px;padding:0 10px;border:1px solid #d6d6d3;border-radius:6px;background:#fff" /></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6b6b6b">所在地 (任意、例「渋谷区」)</span><input type="text" name="item_location" placeholder="市区町村名 or 住所" style="height:34px;padding:0 10px;border:1px solid #d6d6d3;border-radius:6px;background:#fff" /></label>
+          <label style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6b6b6b">価格帯 (任意)</span>
+            <select name="item_price_tier" style="height:34px;padding:0 10px;border:1px solid #d6d6d3;border-radius:6px;background:#fff">
+              <option value="">—</option>
+              <option value="¥">¥ (〜1,000)</option>
+              <option value="¥¥">¥¥ (〜5,000)</option>
+              <option value="¥¥¥">¥¥¥ (〜10,000)</option>
+              <option value="¥¥¥¥">¥¥¥¥ (〜30,000)</option>
+              <option value="¥¥¥¥¥">¥¥¥¥¥ (30,000+)</option>
+            </select>
+          </label>
+        </div>
+        <label style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6b6b6b">サブカテゴリ (任意、例「ramen」「iPhone」)</span><input type="text" name="item_subcategory" style="height:34px;padding:0 10px;border:1px solid #d6d6d3;border-radius:6px;background:#fff" /></label>
+        <label style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6b6b6b">用途タグ (カンマ区切り、例「子連れ可, 深夜営業」)</span><input type="text" name="item_use_case_tags" style="height:34px;padding:0 10px;border:1px solid #d6d6d3;border-radius:6px;background:#fff" /></label>
       </SubmitSection>
 
       <SubmitSection title="判定 + 評価">
@@ -598,7 +648,18 @@ export const SubmitPage: FC<{ itemSlug?: string }> = ({ itemSlug }) => (
         };
         const slug = fd.get('item_slug');
         if (slug) body.item_slug = slug;
-        else body.item = { name: fd.get('item_name'), category: fd.get('item_category'), official_url: fd.get('item_official_url') || undefined };
+        else {
+          const tags = (fd.get('item_use_case_tags') || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+          body.item = {
+            name: fd.get('item_name'),
+            category: fd.get('item_category'),
+            official_url: fd.get('item_official_url') || undefined,
+            location: fd.get('item_location') || undefined,
+            price_tier: fd.get('item_price_tier') || undefined,
+            subcategory: fd.get('item_subcategory') || undefined,
+            use_case_tags: tags.length ? tags : undefined,
+          };
+        }
         return body;
       }
       window.__submit = async (ev, dryRun) => {

@@ -16,7 +16,18 @@ import { take } from './ratelimit';
 
 export type SubmitInput = {
   item_slug?: string;
-  item?: { name: string; category: string; official_url?: string; description?: string };
+  item?: {
+    name: string;
+    category: string;
+    official_url?: string;
+    description?: string;
+    location?: string;
+    lat?: number;
+    lng?: number;
+    price_tier?: string;
+    use_case_tags?: string[];
+    subcategory?: string;
+  };
   reviewer_name?: string;
   reviewer_type?: string;
   reviewer_pubkey?: string;
@@ -97,6 +108,12 @@ export async function submitReview(env: Env, ipHashSource: string, userAgent: st
           avoid_count: 0,
           mixed_count: 0,
           unknown_count: 0,
+          location: input.item.location || null,
+          lat: typeof input.item.lat === 'number' ? input.item.lat : null,
+          lng: typeof input.item.lng === 'number' ? input.item.lng : null,
+          price_tier: input.item.price_tier || null,
+          use_case_tags: JSON.stringify(Array.isArray(input.item.use_case_tags) ? input.item.use_case_tags : []),
+          subcategory: input.item.subcategory || null,
         };
       } else {
         const newId = crypto.randomUUID();
@@ -106,10 +123,21 @@ export async function submitReview(env: Env, ipHashSource: string, userAgent: st
         const nowMs = Date.now();
         await env.DB
           .prepare(
-            `INSERT INTO items (id, slug, name, category, official_url, description, image_url, aliases, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, '[]', ?, ?)`,
+            `INSERT INTO items (id, slug, name, category, official_url, description, image_url, aliases, created_at, updated_at,
+                                location, lat, lng, price_tier, use_case_tags, subcategory)
+             VALUES (?, ?, ?, ?, ?, ?, ?, '[]', ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
-          .bind(newId, slug, input.item.name.trim(), input.item.category, input.item.official_url || null, input.item.description || null, null, nowMs, nowMs)
+          .bind(
+            newId, slug, input.item.name.trim(), input.item.category,
+            input.item.official_url || null, input.item.description || null, null,
+            nowMs, nowMs,
+            input.item.location || null,
+            typeof input.item.lat === 'number' ? input.item.lat : null,
+            typeof input.item.lng === 'number' ? input.item.lng : null,
+            input.item.price_tier || null,
+            JSON.stringify(Array.isArray(input.item.use_case_tags) ? input.item.use_case_tags.slice(0, 20) : []),
+            input.item.subcategory || null,
+          )
           .run();
         item = await env.DB.prepare('SELECT * FROM items WHERE id = ?').bind(newId).first<ItemRow>();
       }

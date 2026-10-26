@@ -86,14 +86,57 @@ export function twoLetterCode(name: string): string {
   return (compact + kana).slice(0, 2) || '??';
 }
 
-export const CATEGORY_META: Record<string, { ab: string; label: string }> = {
-  tool: { ab: 'TL', label: 'ツール' },
-  product: { ab: 'PR', label: '物理商品' },
-  saas: { ab: 'SA', label: 'SaaS' },
-  book: { ab: 'BK', label: '本' },
-  api: { ab: 'AP', label: 'API' },
-  service: { ab: 'SV', label: 'サービス' },
-  other: { ab: 'OT', label: 'その他' },
+export const CATEGORY_META: Record<string, { ab: string; label: string; emoji: string; domain: string }> = {
+  // Dev
+  tool:      { ab: 'TL', label: 'ツール',     emoji: '🔧', domain: 'dev' },
+  saas:      { ab: 'SA', label: 'SaaS',       emoji: '☁️', domain: 'dev' },
+  api:       { ab: 'AP', label: 'API',        emoji: '🔌', domain: 'dev' },
+  book:      { ab: 'BK', label: '本',         emoji: '📚', domain: 'dev' },
+  // Commerce
+  electronics: { ab: 'EL', label: '家電',     emoji: '🔌', domain: 'commerce' },
+  clothing:    { ab: 'CL', label: '服',       emoji: '👕', domain: 'commerce' },
+  furniture:   { ab: 'FN', label: '家具',     emoji: '🪑', domain: 'commerce' },
+  car:         { ab: 'CA', label: '車',       emoji: '🚗', domain: 'commerce' },
+  food:        { ab: 'FD', label: '食品',     emoji: '🍱', domain: 'commerce' },
+  beverage:    { ab: 'BV', label: '飲料',     emoji: '🥤', domain: 'commerce' },
+  cosmetic:    { ab: 'CM', label: '化粧品',   emoji: '💄', domain: 'commerce' },
+  // Services (local + online)
+  restaurant:  { ab: 'RS', label: '飲食店',   emoji: '🍜', domain: 'service' },
+  hotel:       { ab: 'HT', label: 'ホテル',   emoji: '🏨', domain: 'service' },
+  travel:      { ab: 'TR', label: '旅行',     emoji: '✈️', domain: 'service' },
+  medical:     { ab: 'MD', label: '医療',     emoji: '🏥', domain: 'service' },
+  legal:       { ab: 'LG', label: '法律',     emoji: '⚖️', domain: 'service' },
+  financial:   { ab: 'FI', label: '金融',     emoji: '💰', domain: 'service' },
+  education:   { ab: 'ED', label: '教育',     emoji: '🎓', domain: 'service' },
+  // Entertainment / media
+  game:        { ab: 'GM', label: 'ゲーム',   emoji: '🎮', domain: 'media' },
+  movie:       { ab: 'MV', label: '映画',     emoji: '🎬', domain: 'media' },
+  music:       { ab: 'MS', label: '音楽',     emoji: '🎵', domain: 'media' },
+  anime:       { ab: 'AN', label: 'アニメ',   emoji: '🧸', domain: 'media' },
+  sports:      { ab: 'SP', label: 'スポーツ', emoji: '⚽', domain: 'media' },
+  // Life
+  insurance:   { ab: 'IN', label: '保険',     emoji: '🛡️', domain: 'life' },
+  real_estate: { ab: 'RE', label: '不動産',   emoji: '🏠', domain: 'life' },
+  job:         { ab: 'JB', label: '仕事',     emoji: '💼', domain: 'life' },
+  fitness:     { ab: 'FT', label: 'フィットネス', emoji: '💪', domain: 'life' },
+  pet:         { ab: 'PT', label: 'ペット',   emoji: '🐾', domain: 'life' },
+  // Investment
+  stock:       { ab: 'ST', label: '株式',     emoji: '📈', domain: 'invest' },
+  crypto:      { ab: 'CR', label: '暗号資産', emoji: '🪙', domain: 'invest' },
+  // Legacy / catch-all
+  product:     { ab: 'PR', label: '物理商品', emoji: '📦', domain: 'other' },
+  service:     { ab: 'SV', label: 'サービス', emoji: '🛎️', domain: 'other' },
+  other:       { ab: 'OT', label: 'その他',   emoji: '❓', domain: 'other' },
+};
+
+export const DOMAIN_META: Record<string, { label: string; emoji: string }> = {
+  dev:      { label: '開発者向け', emoji: '👩‍💻' },
+  commerce: { label: '買い物',     emoji: '🛒' },
+  service:  { label: 'サービス',   emoji: '🛎️' },
+  media:    { label: 'メディア',   emoji: '🎬' },
+  life:     { label: '生活',       emoji: '🏠' },
+  invest:   { label: '投資',       emoji: '💹' },
+  other:    { label: 'その他',     emoji: '📎' },
 };
 
 export const VERDICT_META: Record<string, { label: string; dot: string; fg: string; bg: string }> = {

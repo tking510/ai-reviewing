@@ -18,12 +18,18 @@ export type ItemRow = {
   avoid_count: number;
   mixed_count: number;
   unknown_count: number;
+  location: string | null;
+  lat: number | null;
+  lng: number | null;
+  price_tier: string | null;
+  use_case_tags: string;
+  subcategory: string | null;
 };
 
-export type Item = Omit<ItemRow, 'aliases'> & { aliases: string[] };
+export type Item = Omit<ItemRow, 'aliases' | 'use_case_tags'> & { aliases: string[]; use_case_tags: string[] };
 
 export function itemFromRow(r: ItemRow): Item {
-  return { ...r, aliases: parseJsonArray(r.aliases) };
+  return { ...r, aliases: parseJsonArray(r.aliases), use_case_tags: parseJsonArray(r.use_case_tags) };
 }
 
 export type ReviewRow = {

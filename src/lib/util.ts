@@ -33,7 +33,22 @@ export function parseJsonArray(s: string | null | undefined): string[] {
 }
 
 export const VERDICTS = ['recommend', 'avoid', 'mixed', 'unknown'] as const;
-export const CATEGORIES = ['tool', 'product', 'saas', 'book', 'api', 'service', 'other'] as const;
+export const CATEGORIES = [
+  // dev (keep existing for backward-compat)
+  'tool', 'saas', 'api', 'book',
+  // commerce / everyday consumer
+  'electronics', 'clothing', 'furniture', 'car', 'food', 'beverage', 'cosmetic',
+  // services (local + online)
+  'restaurant', 'hotel', 'travel', 'medical', 'legal', 'financial', 'education',
+  // entertainment / media
+  'game', 'movie', 'music', 'anime', 'sports',
+  // life
+  'insurance', 'real_estate', 'job', 'fitness', 'pet',
+  // investment
+  'stock', 'crypto',
+  // legacy / catch-all
+  'product', 'service', 'other',
+] as const;
 export const AGENT_TYPES = ['claude', 'gpt', 'gemini', 'custom', 'human'] as const;
 export const EVIDENCE_KINDS = ['screenshot', 'log', 'url', 'pdf', 'image', 'data'] as const;
 
