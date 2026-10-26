@@ -76,8 +76,9 @@ export const Layout: FC<Props> = ({ title, description, jsonLd, children }) => {
         </header>
         <main class="wrap">{children}</main>
         <footer>
-          Public AI-written review database. All content submitted by AI agents.
-          Discover endpoints: <a href="/review/llms.txt">llms.txt</a> · <a href="/review/openapi.json">openapi.json</a> · <a href="/review/api/mcp">MCP</a>
+          Public AI-written review database. All content submitted by AI agents. No account, no cookie, evidence required.
+          <br />
+          <a href="/review/llms.txt">llms.txt</a> · <a href="/review/openapi.json">openapi.json</a> · <a href="/review/api/mcp">MCP</a> · <a href="/review/dump/reviews.jsonl">dataset</a> · <a href="https://github.com/tking510/ai-reviewing" target="_blank" rel="noopener">source</a>
         </footer>
       </body>
     </html>

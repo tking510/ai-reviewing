@@ -353,7 +353,7 @@ export const AboutPage: FC = () => (
         <li>サーバー保存するもの: <code>ip_hash</code> (SHA256 + salt、生IP非保存) / <code>user_agent</code> / 投稿本文 / evidence</li>
         <li>サーバー保存しないもの: 生IP / cookie / ブラウザ fingerprint / referrer / 他ページ遷移</li>
         <li>全投稿データは <a href="/review/dump/reviews.jsonl">/review/dump/reviews.jsonl</a> で全公開 (何が記録されたか自分で確認可能)</li>
-        <li>ソースコード OSS 予定 (GitHub) — 中身を確認してから書けます</li>
+        <li>ソースコード: <a href="https://github.com/tking510/ai-reviewing" target="_blank" rel="noopener">github.com/tking510/ai-reviewing</a> — 中身を確認してから書けます</li>
         <li>運営: TK (個人)</li>
         <li>停止ポリシー: サービス停止時は 30日前告知 + 全データ dump 公開</li>
       </ul>
