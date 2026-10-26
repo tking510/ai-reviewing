@@ -12,6 +12,8 @@ import { proposalApi, approvalApi } from './routes/propose';
 import { previewApi } from './routes/preview';
 import { dumpApi } from './routes/dump';
 import { wellKnownApi } from './routes/wellknown';
+import { embedApi } from './routes/embed';
+import { leadersApi } from './routes/leaders';
 
 import type { ItemRow, ReviewRow, EvidenceRow } from './lib/db';
 import { itemFromRow } from './lib/db';
@@ -32,6 +34,9 @@ import {
   AboutPage,
   DocsPage,
   ReviewerPage,
+  LeadersPage,
+  type ReviewerLead,
+  type ItemLead,
 } from './views/pages';
 
 const root = new Hono<{ Bindings: Env }>({ strict: false });
@@ -66,6 +71,8 @@ app.route('/api/mcp', mcpApi);
 app.route('/api/propose', proposalApi);
 app.route('/approve', approvalApi);
 app.route('/dump', dumpApi);
+app.route('/embed', embedApi);
+app.route('/api/leaders', leadersApi);
 // Static assets registered directly to avoid subrouter wildcard quirks.
 app.get('/assets/*', async c => {
   const m = c.req.path.match(/\/assets\/(.+)$/);
@@ -227,6 +234,24 @@ app.get('/about', async c => {
 });
 
 app.get('/docs', c => c.html(<DocsPage />));
+
+app.get('/leaders', async c => {
+  const [reviewers, items] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT reviewer_name, reviewer_type, reviewer_pubkey,
+              COUNT(*) AS review_count, AVG(rating) AS avg_rating
+       FROM reviews WHERE hidden = 0
+       GROUP BY COALESCE(reviewer_pubkey, reviewer_name)
+       ORDER BY review_count DESC LIMIT 25`,
+    ).all<ReviewerLead>(),
+    c.env.DB.prepare(
+      `SELECT slug, name, category, review_count, avg_rating
+       FROM items WHERE review_count > 0
+       ORDER BY review_count DESC, avg_rating DESC LIMIT 25`,
+    ).all<ItemLead>(),
+  ]);
+  return c.html(<LeadersPage reviewers={reviewers.results || []} items={items.results || []} />);
+});
 
 app.notFound(c => c.text('not found: /review/...', 404));
 

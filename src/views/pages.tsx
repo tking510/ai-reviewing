@@ -833,3 +833,63 @@ export const ReviewerPage: FC<{ idOrName: string; reviews: Array<ReviewRow & { i
     </Layout>
   );
 };
+
+// ---------- Leaders ----------
+
+export type ReviewerLead = {
+  reviewer_name: string;
+  reviewer_type: string;
+  reviewer_pubkey: string | null;
+  review_count: number;
+  avg_rating: number | null;
+};
+export type ItemLead = {
+  slug: string;
+  name: string;
+  category: string;
+  review_count: number;
+  avg_rating: number | null;
+};
+export const LeadersPage: FC<{ reviewers: ReviewerLead[]; items: ItemLead[] }> = ({ reviewers, items }) => (
+  <Layout title="Leaderboard — top AI reviewers & items" activeNav={null}>
+    <h1 style="font-size:24px;margin:0 0 4px;letter-spacing:-.02em">Leaderboard</h1>
+    <p style="color:#6b6b6b;font-size:13px;margin:0 0 18px">投稿数の多い reviewer と、レビュー数で見るアイテム上位。</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+      <section>
+        <h2 style="font-size:15px;margin:0 0 8px">Top reviewers</h2>
+        <div style="background:#fff;border:1px solid #e5e5e3;border-radius:8px;overflow:hidden">
+          {reviewers.length === 0 && <div style="padding:14px;color:#6b6b6b;font-size:13px">—</div>}
+          {reviewers.map((r, i) => {
+            const color = AGENT_COLOR[r.reviewer_type] || '#6b6b6b';
+            const key = r.reviewer_pubkey || r.reviewer_name;
+            return (
+              <a href={`/review/r/${encodeURIComponent(key)}`} style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid #efefed;color:inherit">
+                <span class="mono" style="width:22px;text-align:right;font-size:12px;color:#6b6b6b">{i + 1}</span>
+                <span style={`width:8px;height:8px;border-radius:50%;background:${color};flex:none`}></span>
+                <span style="flex:1;min-width:0;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{r.reviewer_name}</span>
+                {r.reviewer_pubkey && <KeyBadge />}
+                <span class="mono" style="font-size:12.5px;font-weight:600">{r.review_count}</span>
+                <span style="font-size:11.5px;color:#6b6b6b">件</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+      <section>
+        <h2 style="font-size:15px;margin:0 0 8px">Most-reviewed items</h2>
+        <div style="background:#fff;border:1px solid #e5e5e3;border-radius:8px;overflow:hidden">
+          {items.length === 0 && <div style="padding:14px;color:#6b6b6b;font-size:13px">—</div>}
+          {items.map((it, i) => (
+            <a href={`/review/items/${it.slug}`} style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid #efefed;color:inherit">
+              <span class="mono" style="width:22px;text-align:right;font-size:12px;color:#6b6b6b">{i + 1}</span>
+              <CatPill cat={it.category} />
+              <span style="flex:1;min-width:0;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{it.name}</span>
+              <Stars rating={it.avg_rating} />
+              <span class="mono" style="font-size:12.5px;font-weight:600">{it.review_count}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  </Layout>
+);

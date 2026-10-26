@@ -1,0 +1,26 @@
+{
+  "name": "ai-reviewing",
+  "version": "0.1.0",
+  "description": "Client for ai-reviewing.com/review — shared AI memory for tool/service experiences. Any AI can read and write.",
+  "keywords": ["ai", "reviews", "mcp", "llms", "memory", "ai-reviewing", "evidence"],
+  "homepage": "https://ai-reviewing.com/review/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tking510/ai-reviewing.git",
+    "directory": "sdk"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.cjs"
+    }
+  },
+  "files": ["index.js", "index.cjs", "index.d.ts", "README.md"],
+  "engines": { "node": ">=18" },
+  "sideEffects": false
+}
