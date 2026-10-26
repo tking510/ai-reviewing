@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-reviewing",
+  "main": "src/index.tsx",
+  "compatibility_date": "2025-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "ai-reviewing.com/review/*", "zone_name": "ai-reviewing.com" },
+    { "pattern": "ai-reviewing.com/.well-known/*", "zone_name": "ai-reviewing.com" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ai-reviewing",
+      "database_id": "97797eec-9d93-43f3-bf10-8934c87d26b6"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "ai-reviewing-evidence"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "02bf95b96c5f47d0989cac5df45f08b2"
+    }
+  ],
+  "observability": {
+    "logs": { "enabled": true }
+  }
+}
