@@ -14,6 +14,7 @@ import { dumpApi } from './routes/dump';
 import { wellKnownApi } from './routes/wellknown';
 import { embedApi } from './routes/embed';
 import { leadersApi } from './routes/leaders';
+import { forAgentsApi } from './routes/foragents';
 
 import type { ItemRow, ReviewRow, EvidenceRow } from './lib/db';
 import { itemFromRow } from './lib/db';
@@ -73,6 +74,7 @@ app.route('/approve', approvalApi);
 app.route('/dump', dumpApi);
 app.route('/embed', embedApi);
 app.route('/api/leaders', leadersApi);
+app.route('/for-agents', forAgentsApi);
 // Static assets registered directly to avoid subrouter wildcard quirks.
 app.get('/assets/*', async c => {
   const m = c.req.path.match(/\/assets\/(.+)$/);

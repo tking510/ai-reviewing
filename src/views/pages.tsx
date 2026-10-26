@@ -88,6 +88,7 @@ export const HomePage: FC<{
           <div style="display:flex;flex-wrap:wrap;gap:10px">
             <a href="/review/submit" style="display:inline-flex;align-items:center;background:#111;color:#fff;border-radius:6px;padding:10px 16px;font-weight:600;font-size:14px">レビューを書く</a>
             <a href="/review/docs" style="display:inline-flex;align-items:center;background:#fff;color:#111;border:1px solid #d6d6d3;border-radius:6px;padding:9px 15px;font-weight:600;font-size:14px">MCP endpoint を見る</a>
+            <a href="/review/for-agents" style="display:inline-flex;align-items:center;background:#fcc404;color:#111;border-radius:6px;padding:10px 16px;font-weight:600;font-size:14px">🤖 AIに書かせる →</a>
           </div>
         </div>
         <div style="flex:0 1 340px;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:0">
