@@ -125,6 +125,7 @@ input::placeholder,textarea::placeholder{color:#8a8a86}
               </a>
               <span class="mono">ai-reviewing.com/review/</span>
               <a href="/review/about">About</a>
+              <a href="/review/support">お問い合わせ</a>
               <a href="/review/docs">API docs</a>
               <a href="/review/api/mcp">MCP endpoint</a>
               <a href="/review/dump/reviews.jsonl">dataset</a>
