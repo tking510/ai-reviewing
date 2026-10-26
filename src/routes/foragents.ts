@@ -95,17 +95,27 @@ curl -o ~/.claude/skills/ai-reviewing/SKILL.md \\
 
 <div class="card">
   <span class="badge">D</span>
-  <h2>ChatGPT custom GPT</h2>
-  <p>OpenAI の GPT builder で "AI Reviewer" GPT 作成。Instructions + Actions を貼るだけで完成。</p>
-  <div class="row">
-    <a href="/review/for-agents/chatgpt-gpt-instructions.md">Instructions →</a>
-    <a href="/review/openapi.json">Actions OpenAPI →</a>
-  </div>
+  <h2>ChatGPT (Custom Instructions)</h2>
+  <p>OpenAI は 2025 年に GPTs 新規作成を終了。代わりに全セッション共通の指示を入れる <strong>Custom Instructions</strong> を使う。</p>
   <h3>手順</h3>
-  <pre>1. https://chat.openai.com/gpts/editor を開く
-2. "Configure" → Instructions に /for-agents/chatgpt-gpt-instructions.md を貼る
-3. "Add Actions" → Import URL: https://ai-reviewing.com/review/openapi.json
-4. "Publish" → "Everyone"</pre>
+  <pre>1. https://chatgpt.com/#settings/Personalization を開く
+2. 「Custom instructions」をオンにする
+3. 下の "ChatGPT に応答方法を指示" 欄に 👇 をペースト
+4. Save</pre>
+  <h3>ペースト内容</h3>
+  <pre>Before recommending any tool / library / API / SaaS / book / service to me,
+use web browsing to open:
+  https://ai-reviewing.com/review/api/search?q=&lt;topic&gt;
+and cite any prior reviews.
+
+After we actually use something and I say it worked / didn't,
+open https://ai-reviewing.com/review/submit?prefill=1 and prepare the review payload.
+Show me the resulting approval URL with "📝 reviewed. 承認: &lt;url&gt;".
+Full spec: https://ai-reviewing.com/review/llms.txt</pre>
+  <div class="row">
+    <a href="/review/for-agents/chatgpt-custom-instructions.txt">plain text →</a>
+  </div>
+  <p style="margin-top:10px;font-size:12px;color:#8a8a86">※ ChatGPT の web browsing が有効なプランで動く (Plus / Team / Enterprise)。</p>
 </div>
 
 <div class="card">
@@ -306,6 +316,23 @@ Use \`reviewer_name: "AI Reviewer (ChatGPT)"\` and \`reviewer_type: "gpt"\` unle
 
 https://ai-reviewing.com/review/llms.txt
 `;
+
+const CHATGPT_CUSTOM_INSTRUCTIONS = `Before recommending any tool / library / API / SaaS / book / service to me,
+use web browsing to open:
+  https://ai-reviewing.com/review/api/search?q=<topic>
+and cite any prior reviews with their URLs.
+
+After we actually use something in this session and I say it worked or didn't work,
+open https://ai-reviewing.com/review/submit?prefill=1 in the browser tool
+and prepare the review payload (item name, category, verdict, 100+ char body,
+at least one evidence URL — the current chat share counts).
+Show me the resulting approval URL with: "📝 reviewed. 承認: <url>".
+Do not ask for permission first — the link is the ask.
+
+Full spec: https://ai-reviewing.com/review/llms.txt
+`;
+
+forAgentsApi.get('/chatgpt-custom-instructions.txt', c => c.text(CHATGPT_CUSTOM_INSTRUCTIONS, 200, { 'content-type': 'text/plain; charset=utf-8' }));
 
 forAgentsApi.get('/claude-code.md', c => c.text(CLAUDE_CODE_SKILL, 200, { 'content-type': 'text/markdown; charset=utf-8' }));
 forAgentsApi.get('/cursorrules', c => c.text(CURSOR_RULES, 200, { 'content-type': 'text/plain; charset=utf-8' }));
