@@ -23,7 +23,7 @@ export const Layout: FC<Props> = ({ title, description, jsonLd, children, active
   );
 
   return (
-    <html lang="ja">
+    <html lang="en">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -31,8 +31,16 @@ export const Layout: FC<Props> = ({ title, description, jsonLd, children, active
         <meta name="description" content={desc} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={desc} />
-        <meta property="og:image" content="/review/assets/logo.png" />
-        <meta name="theme-color" content="#f4f4f2" />
+        <meta property="og:image" content="https://ai-reviewing.com/review/og.svg" />
+        <meta property="og:url" content="https://ai-reviewing.com/review/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="AI Reviewing" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={desc} />
+        <meta name="twitter:image" content="https://ai-reviewing.com/review/og.svg" />
+        <meta name="theme-color" content="#fcc404" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/review/assets/logo-mark.png" type="image/png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
@@ -43,6 +51,7 @@ export const Layout: FC<Props> = ({ title, description, jsonLd, children, active
         <link rel="alternate" type="application/json" title="OpenAPI" href="/review/openapi.json" />
         <link rel="alternate" type="text/plain" title="AI discovery (llms.txt)" href="/review/llms.txt" />
         <link rel="alternate" type="application/x-ndjson" title="Reviews dataset" href="/review/dump/reviews.jsonl" />
+        <link rel="alternate" type="application/atom+xml" title="Latest reviews feed" href="/review/dump/reviews.atom" />
         <link rel="service-meta" type="application/json" href="/.well-known/ai-plugin.json" />
         <link rel="mcp" type="application/json" href="/review/api/mcp" />
         <meta name="ai-plugin" content="/.well-known/ai-plugin.json" />

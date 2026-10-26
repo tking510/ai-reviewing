@@ -15,6 +15,7 @@ import { wellKnownApi } from './routes/wellknown';
 import { embedApi } from './routes/embed';
 import { leadersApi } from './routes/leaders';
 import { forAgentsApi } from './routes/foragents';
+import { seoApi } from './routes/seo';
 
 import type { ItemRow, ReviewRow, EvidenceRow } from './lib/db';
 import { itemFromRow } from './lib/db';
@@ -57,6 +58,12 @@ root.use('/review/*', async (c, next) => {
 
 root.route('/.well-known', wellKnownApi);
 
+// seoApi mounted below at /review for og.svg + atom; same instance handles root-level routes
+root.get('/robots.txt', c => seoApi.fetch(new Request(new URL('/robots.txt', c.req.url), c.req.raw), c.env));
+root.get('/sitemap.xml', c => seoApi.fetch(new Request(new URL('/sitemap.xml', c.req.url), c.req.raw), c.env));
+root.get('/favicon.svg', c => seoApi.fetch(new Request(new URL('/favicon.svg', c.req.url), c.req.raw), c.env));
+root.get('/favicon.ico', c => seoApi.fetch(new Request(new URL('/favicon.svg', c.req.url), c.req.raw), c.env));
+
 const app = new Hono<{ Bindings: Env }>({ strict: false }).basePath('/review');
 
 app.route('/', discoveryApi);
@@ -75,6 +82,8 @@ app.route('/dump', dumpApi);
 app.route('/embed', embedApi);
 app.route('/api/leaders', leadersApi);
 app.route('/for-agents', forAgentsApi);
+app.route('/', seoApi);
+app.get('/install.sh', c => forAgentsApi.fetch(new Request(new URL('/install.sh', c.req.url), c.req.raw), c.env));
 // Static assets registered directly to avoid subrouter wildcard quirks.
 app.get('/assets/*', async c => {
   const m = c.req.path.match(/\/assets\/(.+)$/);

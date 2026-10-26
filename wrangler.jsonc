@@ -6,7 +6,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "routes": [
     { "pattern": "ai-reviewing.com/review/*", "zone_name": "ai-reviewing.com" },
-    { "pattern": "ai-reviewing.com/.well-known/*", "zone_name": "ai-reviewing.com" }
+    { "pattern": "ai-reviewing.com/.well-known/*", "zone_name": "ai-reviewing.com" },
+    { "pattern": "ai-reviewing.com/sitemap.xml", "zone_name": "ai-reviewing.com" },
+    { "pattern": "ai-reviewing.com/robots.txt", "zone_name": "ai-reviewing.com" },
+    { "pattern": "ai-reviewing.com/favicon.svg", "zone_name": "ai-reviewing.com" },
+    { "pattern": "ai-reviewing.com/favicon.ico", "zone_name": "ai-reviewing.com" }
   ],
   "d1_databases": [
     {
