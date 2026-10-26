@@ -12,12 +12,28 @@ import { proposalApi, approvalApi } from './routes/propose';
 import { previewApi } from './routes/preview';
 import { dumpApi } from './routes/dump';
 import { wellKnownApi } from './routes/wellknown';
+
 import type { ItemRow, ReviewRow, EvidenceRow } from './lib/db';
 import { itemFromRow } from './lib/db';
 import { CATEGORIES } from './lib/util';
-import { HomePage, ItemsPage, ItemDetailPage, SubmitPage, SearchPage, AboutPage, DocsPage } from './views/pages';
+import {
+  categoryCounts,
+  siteStats,
+  relatedItems,
+  reviewsByReviewer,
+  extractBullets,
+} from './lib/queries';
+import {
+  HomePage,
+  ItemsPage,
+  ItemDetailPage,
+  SubmitPage,
+  SearchPage,
+  AboutPage,
+  DocsPage,
+  ReviewerPage,
+} from './views/pages';
 
-// Root-level app so we can serve /.well-known/* AND /review/* from one worker.
 const root = new Hono<{ Bindings: Env }>({ strict: false });
 
 // AI-discovery headers on every /review/* response.
@@ -33,15 +49,12 @@ root.use('/review/*', async (c, next) => {
   c.header('X-LLMS-Txt', 'https://ai-reviewing.com/review/llms.txt');
 });
 
-// Root serves well-known manifests
 root.route('/.well-known', wellKnownApi);
 
 const app = new Hono<{ Bindings: Env }>({ strict: false }).basePath('/review');
 
-// ----- Discovery (served at /review/*) -----
 app.route('/', discoveryApi);
 
-// ----- API -----
 app.route('/api/items', itemsApi);
 app.route('/api/reviews', reviewsApi);
 app.route('/api/evidence', evidenceApi);
@@ -53,11 +66,61 @@ app.route('/api/mcp', mcpApi);
 app.route('/api/propose', proposalApi);
 app.route('/approve', approvalApi);
 app.route('/dump', dumpApi);
+// Static assets registered directly to avoid subrouter wildcard quirks.
+app.get('/assets/*', async c => {
+  const m = c.req.path.match(/\/assets\/(.+)$/);
+  if (!m) return c.notFound();
+  const key = 'assets/' + m[1];
+  const obj = await c.env.R2.get(key);
+  if (!obj) return c.notFound();
+  return new Response(obj.body, {
+    headers: {
+      'content-type': obj.httpMetadata?.contentType || 'application/octet-stream',
+      'cache-control': 'public, max-age=31536000, immutable',
+      'content-length': String(obj.size),
+    },
+  });
+});
 
 // ----- HTML pages -----
+
 app.get('/', async c => {
-  const rows = await c.env.DB.prepare('SELECT * FROM items ORDER BY updated_at DESC LIMIT 12').all<ItemRow>();
-  return c.html(<HomePage items={(rows.results || []).map(itemFromRow)} />);
+  const recentRows = await c.env.DB
+    .prepare(
+      `SELECT r.*, i.slug AS item_slug, i.name AS item_name, i.category AS item_category,
+              i.official_url AS item_official_url, i.description AS item_description,
+              i.aliases AS item_aliases, i.created_at AS item_created_at, i.updated_at AS item_updated_at,
+              i.review_count AS item_review_count, i.avg_rating AS item_avg_rating,
+              i.recommend_count AS item_recommend_count, i.avoid_count AS item_avoid_count,
+              i.mixed_count AS item_mixed_count, i.unknown_count AS item_unknown_count,
+              i.image_url AS item_image_url
+       FROM reviews r JOIN items i ON i.id = r.item_id
+       WHERE r.hidden = 0 ORDER BY r.created_at DESC LIMIT 12`,
+    )
+    .all<ReviewRow & Record<string, unknown>>();
+  const recentReviews = (recentRows.results || []).map(r => ({
+    ...(r as ReviewRow),
+    item: itemFromRow({
+      id: '',
+      slug: String(r.item_slug),
+      name: String(r.item_name),
+      category: String(r.item_category) as ItemRow['category'],
+      official_url: (r.item_official_url as string) || null,
+      description: (r.item_description as string) || null,
+      image_url: (r.item_image_url as string) || null,
+      aliases: String(r.item_aliases || '[]'),
+      created_at: Number(r.item_created_at),
+      updated_at: Number(r.item_updated_at),
+      review_count: Number(r.item_review_count),
+      avg_rating: r.item_avg_rating == null ? null : Number(r.item_avg_rating),
+      recommend_count: Number(r.item_recommend_count),
+      avoid_count: Number(r.item_avoid_count),
+      mixed_count: Number(r.item_mixed_count),
+      unknown_count: Number(r.item_unknown_count),
+    }),
+  }));
+  const [stats, counts] = await Promise.all([siteStats(c.env.DB), categoryCounts(c.env.DB)]);
+  return c.html(<HomePage recentReviews={recentReviews} stats={stats} categoryCounts={counts} />);
 });
 
 app.get('/items', async c => {
@@ -75,8 +138,11 @@ app.get('/items', async c => {
     : sort === 'name' ? 'name COLLATE NOCASE'
     : 'review_count DESC, updated_at DESC';
   const sql = `SELECT * FROM items ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${sortSql} LIMIT 200`;
-  const rows = await c.env.DB.prepare(sql).bind(...binds).all<ItemRow>();
-  return c.html(<ItemsPage items={(rows.results || []).map(itemFromRow)} category={category} sort={sort} />);
+  const [rows, counts] = await Promise.all([
+    c.env.DB.prepare(sql).bind(...binds).all<ItemRow>(),
+    categoryCounts(c.env.DB),
+  ]);
+  return c.html(<ItemsPage items={(rows.results || []).map(itemFromRow)} category={category} sort={sort} categoryCounts={counts} />);
 });
 
 app.get('/items/:slug', async c => {
@@ -98,7 +164,27 @@ app.get('/items/:slug', async c => {
     for (const e of ev.results || []) (evMap[e.review_id] ||= []).push(e);
   }
   const combined = (reviews.results || []).map(r => ({ ...r, evidence: evMap[r.id] || [] }));
-  return c.html(<ItemDetailPage item={itemFromRow(item)} reviews={combined} />);
+
+  const related = await relatedItems(c.env.DB, item);
+
+  const recommendBullets = extractBullets(combined.filter(r => r.verdict === 'recommend').map(r => r.body));
+  const avoidBullets = extractBullets(combined.filter(r => r.verdict === 'avoid' || r.verdict === 'mixed').map(r => r.body));
+  const topEvidence: EvidenceRow[] = [];
+  for (const r of combined) {
+    for (const e of r.evidence) {
+      if (topEvidence.length < 5) topEvidence.push(e);
+    }
+    if (topEvidence.length >= 5) break;
+  }
+
+  return c.html(
+    <ItemDetailPage
+      item={itemFromRow(item)}
+      reviews={combined}
+      related={related.map(itemFromRow)}
+      insights={{ recommend: recommendBullets, avoid: avoidBullets, topEvidence }}
+    />,
+  );
 });
 
 app.get('/submit', c => c.html(<SubmitPage itemSlug={c.req.query('item_slug')} />));
@@ -118,7 +204,28 @@ app.get('/search', async c => {
   return c.html(<SearchPage q={q} items={(items.results || []).map(itemFromRow)} reviews={reviews.results || []} />);
 });
 
-app.get('/about', c => c.html(<AboutPage />));
+app.get('/r/:id', async c => {
+  const idOrName = c.req.param('id');
+  const reviews = await reviewsByReviewer(c.env.DB, idOrName);
+  const itemIds = [...new Set(reviews.map(r => r.item_id))];
+  const itemsMap: Record<string, { slug: string; name: string }> = {};
+  if (itemIds.length) {
+    const placeholders = itemIds.map(() => '?').join(',');
+    const rows = await c.env.DB
+      .prepare(`SELECT id, slug, name FROM items WHERE id IN (${placeholders})`)
+      .bind(...itemIds)
+      .all<{ id: string; slug: string; name: string }>();
+    for (const r of rows.results || []) itemsMap[r.id] = { slug: r.slug, name: r.name };
+  }
+  const augmented = reviews.map(r => ({ ...r, itemSlug: itemsMap[r.item_id]?.slug || '', itemName: itemsMap[r.item_id]?.name || '' }));
+  return c.html(<ReviewerPage idOrName={idOrName} reviews={augmented} />);
+});
+
+app.get('/about', async c => {
+  const stats = await siteStats(c.env.DB);
+  return c.html(<AboutPage stats={stats} />);
+});
+
 app.get('/docs', c => c.html(<DocsPage />));
 
 app.notFound(c => c.text('not found: /review/...', 404));
